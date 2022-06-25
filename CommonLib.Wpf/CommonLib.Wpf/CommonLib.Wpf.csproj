@@ -20,6 +20,10 @@
     <PackageReference Include="AutoMapper" Version="11.0.1" />
     <PackageReference Include="ExCSS" Version="4.1.3" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
+    <PackageReference Include="Infragistics.WPF" Version="22.1.40" />
+    <PackageReference Include="Infragistics.WPF.Editors" Version="22.1.40" />
+    <PackageReference Include="Infragistics.WPF.Gauges" Version="22.1.40" />
+    <PackageReference Include="Infragistics.WPF.Themes.MetroDark" Version="22.1.40" />
     <PackageReference Include="Keras.NET" Version="3.8.5" />
     <PackageReference Include="MahApps.Metro" Version="2.4.9" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="4.11.0" />
@@ -42,9 +46,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="InfragisticsWPF4.v19.1">
-      <HintPath>E:\Program FIles\Infragistics\2019.1\WPF\CLR4.0\Bin\InfragisticsWPF4.v19.1.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.AspNetCore.Authorization">
       <HintPath>C:\Program Files\dotnet\packs\Microsoft.AspNetCore.App.Ref\3.0.0\ref\netcoreapp3.0\Microsoft.AspNetCore.Authorization.dll</HintPath>
     </Reference>
