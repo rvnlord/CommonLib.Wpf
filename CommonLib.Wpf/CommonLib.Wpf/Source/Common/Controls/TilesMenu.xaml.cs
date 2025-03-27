@@ -13,6 +13,8 @@ using CommonLib.Source.Common.Extensions.Collections;
 using CommonLib.Source.Common.Utils;
 using CommonLib.Wpf.Source.Common.Extensions;
 using CommonLib.Wpf.Source.Common.Extensions.Collections;
+using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
 using MahApps.Metro.IconPacks;
 using MoreLinq;
 using Point = System.Windows.Point;
@@ -38,8 +40,8 @@ namespace CommonLib.Wpf.Source.Common.Controls
         private bool _menuMouseUp_BeforeAnimationFinished;
         private bool _menuMouseUp_Finished;
 
-        public static readonly DependencyProperty OptionsDp = DependencyProperty.Register(nameof(Options), 
-            typeof(ObservableCollection<TilesMenuOption>), typeof(TilesMenu), new UIPropertyMetadata(null));
+        public static readonly DependencyProperty OptionsDp = DependencyProperty.Register(nameof(Options),
+            typeof(ObservableCollection<TilesMenuOption>), typeof(TilesMenu), new UIPropertyMetadata(new ObservableCollection<TilesMenuOption>()));
 
         public ObservableCollection<TilesMenuOption> Options
         {
@@ -55,24 +57,24 @@ namespace CommonLib.Wpf.Source.Common.Controls
         public IReadOnlyList<Tile> MenuTiles { get; private set; }
         public List<string> TilesOrder { get; private set; }
         public Tile ResizeTile { get; private set; }
-        public static readonly DependencyProperty IsFullSizeDp = DependencyProperty.Register(nameof(IsFullSize), 
+        public static readonly DependencyProperty IsFullSizeDp = DependencyProperty.Register(nameof(IsFullSize),
             typeof(bool), typeof(TilesMenu), new UIPropertyMetadata(null));
         public bool IsFullSize
         {
-            get => (bool)GetValue(IsFullSizeDp);
+            get => Dispatcher.Invoke(() => (bool)GetValue(IsFullSizeDp));
             set => SetValue(IsFullSizeDp, value);
         }
         public int DefaultTileWidth { get; private set; }
-        
-        public static readonly DependencyProperty ResizeValueDp = DependencyProperty.Register(nameof(ResizeValue), 
+
+        public static readonly DependencyProperty ResizeValueDp = DependencyProperty.Register(nameof(ResizeValue),
             typeof(int), typeof(TilesMenu), new UIPropertyMetadata(100, null));
         public int ResizeValue
         {
-            get => (int)GetValue(ResizeValueDp);
+            get => Dispatcher.Invoke(() => (int)GetValue(ResizeValueDp));
             set => SetValue(ResizeValueDp, value);
         }
 
-        public static readonly DependencyProperty MouseOverColorDp = DependencyProperty.Register(nameof(MouseOverColor), 
+        public static readonly DependencyProperty MouseOverColorDp = DependencyProperty.Register(nameof(MouseOverColor),
             typeof(Brush), typeof(TilesMenu), new UIPropertyMetadata(null));
         public SolidColorBrush MouseOverColor
         {
@@ -146,7 +148,7 @@ namespace CommonLib.Wpf.Source.Common.Controls
             {
                 var tl = menuOption.LogicalDescendants<Tile>().Single();
                 tl.Name = menuOption.TileName;
-                
+
                 menuOption.Tile = tl;
                 menuOption.MouseOutColor = MouseOutColor.Color;
                 menuOption.MouseOverColor = MouseOverColor.Color;
@@ -157,7 +159,7 @@ namespace CommonLib.Wpf.Source.Common.Controls
 
             ResizeMouseOverColor = (SolidColorBrush)FindResource("MouseOverMainMenuResizeTileBrush");
             ResizeMouseOutColor = (SolidColorBrush)FindResource("DefaultMainMenuResizeTileBrush");
-            
+
             DefaultTileWidth = menuTiles[0].Width.ToInt();
             if (IsFullSize)
                 Expand();
@@ -214,199 +216,208 @@ namespace CommonLib.Wpf.Source.Common.Controls
 
         private void TlTab_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (new[] { false, _menuMouseMove_BeforeAnimationFinished, _menuMouseMove_Finished, _menuMouseUp_BeforeAnimationFinished, _menuMouseUp_Finished }.AllEqual())
+            Dispatcher.Invoke(() =>
             {
-                LockUtils.Lock (_syncTilesMenu, nameof(_syncTilesMenu), nameof(TlTab_PreviewMouseLeftButtonDown), () =>
+                if (new[] { false, _menuMouseMove_BeforeAnimationFinished, _menuMouseMove_Finished, _menuMouseUp_BeforeAnimationFinished, _menuMouseUp_Finished }.AllEqual())
                 {
-                    _tlToMove = (Tile) sender;
-                    var parentGrid = _tlToMove.LogicalAncestor<StackPanel>().LogicalAncestor<Grid>();
-                    _matcMainDraggingStartPoint = e.GetPosition(parentGrid);
+                    LockUtils.Lock(_syncTilesMenu, nameof(_syncTilesMenu), nameof(TlTab_PreviewMouseLeftButtonDown), () =>
+                    {
+                        _tlToMove = (Tile)sender;
+                        var parentGrid = _tlToMove.LogicalAncestor<StackPanel>().LogicalAncestor<Grid>();
+                        _matcMainDraggingStartPoint = e.GetPosition(parentGrid);
 
-                    _menuMouseDown_Finished = true;
-                });
-            }
+                        _menuMouseDown_Finished = true;
+                    });
+                }
+            });
         }
 
         private async void TlTab_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            Tile matchingDummyTile = null;
-            DoubleAnimation moveAni = null;
-            double? emptyPosYLocal = null;
-
-            if (new[] { true, _menuMouseDown_Finished }.AllEqual() &&
-                new[] { false, _menuMouseUp_BeforeAnimationFinished, _menuMouseUp_Finished }.AllEqual())
+            await Dispatcher.InvokeAsync(async () =>
             {
-                LockUtils.Lock(_syncTilesMenu, nameof(_syncTilesMenu), nameof(TlTab_PreviewMouseMove), () =>
+                Tile matchingDummyTile = null;
+                DoubleAnimation moveAni = null;
+                double? emptyPosYLocal = null;
+
+                if (new[] { true, _menuMouseDown_Finished }.AllEqual() &&
+                    new[] { false, _menuMouseUp_BeforeAnimationFinished, _menuMouseUp_Finished }.AllEqual())
                 {
-                    if (e.LeftButton != MouseButtonState.Pressed || _matcMainDraggingStartPoint == null)
-                        return;
-
-                    var tileToMove = (Tile) sender;
-                    var parentGrid = tileToMove.LogicalAncestor<StackPanel>().LogicalAncestor<Grid>();
-                    var mousePos = e.GetPosition(parentGrid);
-                    var draggingStartPoint = (Point) _matcMainDraggingStartPoint;
-                    var diff = draggingStartPoint - mousePos;
-                    if (!(Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance) && !(Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
-                        return;
-
-                    if (_cvMovingTile == null)
+                    LockUtils.Lock(_syncTilesMenu, nameof(_syncTilesMenu), nameof(TlTab_PreviewMouseMove), () =>
                     {
-                        _cvMovingTile = new Canvas { Name = "cvMovingTileContainer" };
-                        parentGrid.Children.Add(_cvMovingTile);
-                    }
+                        if (e.LeftButton != MouseButtonState.Pressed || _matcMainDraggingStartPoint == null)
+                            return;
 
-                    if (_tlMoving == null)
-                    {
-                        var i = 0;
-                        foreach (var tl in TilesOrder.Select(o => MenuTiles.Single(tl => tl.Name == o)))
+                        var tileToMove = (Tile)sender;
+                        var parentGrid = tileToMove.LogicalAncestor<StackPanel>().LogicalAncestor<Grid>();
+                        var mousePos = e.GetPosition(parentGrid);
+                        var draggingStartPoint = (Point)_matcMainDraggingStartPoint;
+                        var diff = draggingStartPoint - mousePos;
+                        if (!(Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance) && !(Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
+                            return;
+
+                        if (_cvMovingTile == null)
                         {
-                            var dataTemplate = (DataTemplate) FindResource("TilesMenuOptionTileDataTemplate");
-
-                            var clonedTile = new Tile // cloning using xaml serialization is much slower than this
-                            {
-                                Name = $"{tl.Name}_Clone",
-                                Style = tl.Style,
-                                ContentTemplate = dataTemplate,
-                                Width = tl.Width,
-                                Height = tl.Height
-                            };
-                            clonedTile.ApplyTemplate();
-                            var clonedContentPresenter = clonedTile.VisualDescendants<ContentPresenter>().First();
-                            clonedContentPresenter.ApplyTemplate();
-
-                            var originalTb = tl.VisualDescendants<TextBlock>().First();
-                            var clonedTb = clonedTile.VisualDescendants<TextBlock>().First();
-                            clonedTb.Text = originalTb.Text;
-
-                            var originalIcon = tl.VisualDescendants<PackIconModern>().First();
-                            var clonedIcon = clonedTile.VisualDescendants<PackIconModern>().First();
-                            clonedIcon.Kind = originalIcon.Kind;
-
-                            _cvMovingTile.Children.Add(clonedTile);
-
-                            clonedTile.PositionY(i++ * (clonedTile.Height + clonedTile.Margin.Top + clonedTile.Margin.Bottom));
-                            if (Equals(tl, tileToMove))
-                            {
-                                clonedTile.ZIndex(MenuTiles.Select(x => x.ZIndex()).Max() + 1);
-                                _tlMoving = clonedTile;
-                                _emptyPosY = _tlMoving.PositionY();
-                            }
-
-                            clonedTile.Background = Equals(tl, SelectedTile) ? MouseOverColor : MouseOutColor;
+                            _cvMovingTile = new Canvas { Name = "cvMovingTileContainer" };
+                            parentGrid.Children.Add(_cvMovingTile);
                         }
 
-                        _menuTilesOpacity = MenuTiles[0].Opacity;
-                        foreach (var tl in MenuTiles)
-                            tl.Opacity = 0;
-                    }
+                        if (_tlMoving == null)
+                        {
+                            var i = 0;
+                            foreach (var tl in TilesOrder.Select(o => MenuTiles.Single(tl => tl.Name == o)))
+                            {
+                                var dataTemplate = (DataTemplate)FindResource("TilesMenuOptionTileDataTemplate");
 
-                    if (_tlMoving == null || _emptyPosY == null) throw new NullReferenceException($"{nameof(_tlMoving)} or {nameof(_emptyPosY)} is still null after the loop");
+                                var clonedTile = new Tile // cloning using xaml serialization is much slower than this
+                                {
+                                    Name = $"{tl.Name}_Clone",
+                                    Style = tl.Style,
+                                    ContentTemplate = dataTemplate,
+                                    Width = tl.Width,
+                                    Height = tl.Height
+                                };
+                                clonedTile.ApplyTemplate();
+                                var clonedContentPresenter = clonedTile.VisualDescendants<ContentPresenter>().First();
+                                clonedContentPresenter.ApplyTemplate();
 
-                    var initPosRelToTile = parentGrid.TranslatePoint(draggingStartPoint, _tlToMove);
-                    var lastTilePos = (_cvMovingTile.LogicalDescendants<Tile>().Count() - 1) * (tileToMove.Height + tileToMove.Margin.Top + tileToMove.Margin.Bottom);
-                    var rawMovingTilePos = mousePos.Y - initPosRelToTile.Y;
-                    var movingTilePos = Math.Min(lastTilePos, Math.Max(0, rawMovingTilePos));
+                                var originalTb = tl.VisualDescendants<TextBlock>().First();
+                                var clonedTb = clonedTile.VisualDescendants<TextBlock>().First();
+                                clonedTb.Text = originalTb.Text;
 
-                    _tlMoving.PositionY(movingTilePos);
+                                var originalIcon = tl.VisualDescendants<PackIconModern>().First();
+                                var clonedIcon = clonedTile.VisualDescendants<PackIconModern>().First();
+                                clonedIcon.Kind = originalIcon.Kind;
 
-                    var dummyTiles = _cvMovingTile.Children.OfType<Tile>().Except(_tlMoving).ToArray();
-                    var tileHalfH = _tlMoving.Height / 2;
+                                _cvMovingTile.Children.Add(clonedTile);
 
-                    if (_tlMoving == null) return;
-                    var tilesMovingUp = dummyTiles.Where(tl => (_tlMoving.PositionY() + _tlMoving.Height - (tl.PositionY() + tileHalfH)).BetweenExcl(0, tileHalfH)).ToArray();
-                    var tilesMovingDown = dummyTiles.Where(tl => (tl.PositionY() + tileHalfH - _tlMoving.PositionY()).BetweenExcl(0, tileHalfH)).ToArray();
-                    var matchingDummyTIles = tilesMovingUp.Concat(tilesMovingDown).Except(_switchingTIles).ToArray();
-                    if (matchingDummyTIles.Length > 1) throw new ArgumentException($"{nameof(matchingDummyTIles)}.Length is greater than 1");
-                    if (matchingDummyTIles.Length == 1)
-                    {
-                        emptyPosYLocal = _emptyPosY;
-                        matchingDummyTile = matchingDummyTIles.Single();
-                        moveAni = new DoubleAnimation(emptyPosYLocal.ToDouble(), new Duration(TimeSpan.FromMilliseconds(200)));
-                        var newEmptyPosY = matchingDummyTile.PositionY();
-                        _switchingTIles.Add(matchingDummyTile);
-                        _emptyPosY = newEmptyPosY;
-                    }
+                                clonedTile.PositionY(i++ * (clonedTile.Height + clonedTile.Margin.Top + clonedTile.Margin.Bottom));
+                                if (Equals(tl, tileToMove))
+                                {
+                                    clonedTile.ZIndex(MenuTiles.Select(x => x.ZIndex()).Max() + 1);
+                                    _tlMoving = clonedTile;
+                                    _emptyPosY = _tlMoving.PositionY();
+                                }
 
-                    _menuMouseMove_BeforeAnimationFinished = true;
-                });
+                                clonedTile.Background = Equals(tl, SelectedTile) ? MouseOverColor : MouseOutColor;
+                            }
 
-                if (matchingDummyTile != null)
-                    await matchingDummyTile.AnimateAsync(Canvas.TopProperty, moveAni).ConfigureAwait(false);
-            }
+                            _menuTilesOpacity = MenuTiles[0].Opacity;
+                            foreach (var tl in MenuTiles)
+                                tl.Opacity = 0;
+                        }
 
-            if (new[] { true, _menuMouseDown_Finished, _menuMouseMove_BeforeAnimationFinished }.AllEqual() &&
-                new[] { false, _menuMouseUp_BeforeAnimationFinished, _menuMouseUp_Finished }.AllEqual())
-            {
-                LockUtils.Lock(_syncTilesMenu, nameof(_syncTilesMenu), nameof(TlTab_PreviewMouseMove), () =>
-                {
+                        if (_tlMoving == null || _emptyPosY == null) throw new NullReferenceException($"{nameof(_tlMoving)} or {nameof(_emptyPosY)} is still null after the loop");
+
+                        var initPosRelToTile = parentGrid.TranslatePoint(draggingStartPoint, _tlToMove);
+                        var lastTilePos = (_cvMovingTile.LogicalDescendants<Tile>().Count() - 1) * (tileToMove.Height + tileToMove.Margin.Top + tileToMove.Margin.Bottom);
+                        var rawMovingTilePos = mousePos.Y - initPosRelToTile.Y;
+                        var movingTilePos = Math.Min(lastTilePos, Math.Max(0, rawMovingTilePos));
+
+                        _tlMoving.PositionY(movingTilePos);
+
+                        var dummyTiles = _cvMovingTile.Children.OfType<Tile>().Except(_tlMoving).ToArray();
+                        var tileHalfH = _tlMoving.Height / 2;
+
+                        if (_tlMoving == null) return;
+                        var tilesMovingUp = dummyTiles.Where(tl => (_tlMoving.PositionY() + _tlMoving.Height - (tl.PositionY() + tileHalfH)).BetweenExcl(0, tileHalfH)).ToArray();
+                        var tilesMovingDown = dummyTiles.Where(tl => (tl.PositionY() + tileHalfH - _tlMoving.PositionY()).BetweenExcl(0, tileHalfH)).ToArray();
+                        var matchingDummyTIles = tilesMovingUp.Concat(tilesMovingDown).Except(_switchingTIles).ToArray();
+                        if (matchingDummyTIles.Length > 1) throw new ArgumentException($"{nameof(matchingDummyTIles)}.Length is greater than 1");
+                        if (matchingDummyTIles.Length == 1)
+                        {
+                            emptyPosYLocal = _emptyPosY;
+                            matchingDummyTile = matchingDummyTIles.Single();
+                            moveAni = new DoubleAnimation(emptyPosYLocal.ToDouble(), new Duration(TimeSpan.FromMilliseconds(200)));
+                            var newEmptyPosY = matchingDummyTile.PositionY();
+                            _switchingTIles.Add(matchingDummyTile);
+                            _emptyPosY = newEmptyPosY;
+                        }
+
+                        _menuMouseMove_BeforeAnimationFinished = true;
+                    });
+
                     if (matchingDummyTile != null)
-                    {
-                        _switchingTIles.Remove(matchingDummyTile);
-                        matchingDummyTile.PositionY(emptyPosYLocal.ToDouble());
-                    }
+                        await matchingDummyTile.AnimateAsync(Canvas.TopProperty, moveAni);
+                }
 
-                    _menuMouseMove_Finished = true;
-                });
-            }
+                if (new[] { true, _menuMouseDown_Finished, _menuMouseMove_BeforeAnimationFinished }.AllEqual() &&
+                    new[] { false, _menuMouseUp_BeforeAnimationFinished, _menuMouseUp_Finished }.AllEqual())
+                {
+                    LockUtils.Lock(_syncTilesMenu, nameof(_syncTilesMenu), nameof(TlTab_PreviewMouseMove), () =>
+                    {
+                        if (matchingDummyTile != null)
+                        {
+                            _switchingTIles.Remove(matchingDummyTile);
+                            matchingDummyTile.PositionY(emptyPosYLocal.ToDouble());
+                        }
+
+                        _menuMouseMove_Finished = true;
+                    });
+                }
+            });
         }
 
         private async void TlTab_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (new[] { true, _menuMouseDown_Finished, _menuMouseMove_BeforeAnimationFinished, _menuMouseMove_Finished }.AllEqual() &&
-                new[] { false, _menuMouseUp_Finished }.AllEqual())
+            await Dispatcher.InvokeAsync(async () =>
             {
-                DoubleAnimation moveAni;
-                lock (_syncTilesMenu)
+                if (new[] { true, _menuMouseDown_Finished, _menuMouseMove_BeforeAnimationFinished, _menuMouseMove_Finished }.AllEqual() &&
+                    new[] { false, _menuMouseUp_Finished }.AllEqual())
                 {
-                    if (_emptyPosY == null)
-                        return;
+                    DoubleAnimation moveAni;
+                    lock (_syncTilesMenu)
+                    {
+                        if (_emptyPosY == null)
+                            return;
 
-                    moveAni = new DoubleAnimation((double)_emptyPosY, new Duration(TimeSpan.FromMilliseconds(200)));
+                        moveAni = new DoubleAnimation((double)_emptyPosY, new Duration(TimeSpan.FromMilliseconds(200)));
 
-                    _menuMouseUp_BeforeAnimationFinished = true;
+                        _menuMouseUp_BeforeAnimationFinished = true;
+                    }
+
+                    await _tlMoving.AnimateAsync(Canvas.TopProperty, moveAni);
                 }
 
-                await _tlMoving.AnimateAsync(Canvas.TopProperty, moveAni).ConfigureAwait(false);
-            }
-
-            if (new[] { true, _menuMouseDown_Finished, _menuMouseMove_BeforeAnimationFinished, _menuMouseMove_Finished, _menuMouseUp_BeforeAnimationFinished }.AllEqual())
-            {
-                lock (_syncTilesMenu)
+                if (new[] { true, _menuMouseDown_Finished, _menuMouseMove_BeforeAnimationFinished, _menuMouseMove_Finished, _menuMouseUp_BeforeAnimationFinished }.AllEqual())
                 {
-                    if (_emptyPosY == null)
-                        return;
+                    lock (_syncTilesMenu)
+                    {
+                        if (_emptyPosY == null)
+                            return;
 
-                    _tlMoving.PositionY((double)_emptyPosY);
+                        _tlMoving.PositionY((double)_emptyPosY);
 
-                    var orderedDummyTiles = _cvMovingTile.LogicalDescendants<Tile>().OrderBy(tl => tl.PositionY());
-                    var orderedTiles = orderedDummyTiles.Select(dtl => MenuTiles.Single(tl => dtl.Name.ContainsInvariant(tl.Name))).ToList();
-                    var utilTiles = _spMenu.LogicalDescendants<Tile>().Except(orderedTiles).ToList();
-                    _spMenu.Children.ReplaceAll(orderedTiles);
-                    _spMenu.Children.AddRange(utilTiles);
-                    TilesOrder.ReplaceAll(orderedTiles.Select(i => i.Name).ToList()); // bezpiecznie podmień elementy żeby uniknąć zepsucia odniesień przekazanych do metod
+                        var orderedDummyTiles = _cvMovingTile.LogicalDescendants<Tile>().OrderBy(tl => tl.PositionY());
+                        var orderedTiles = orderedDummyTiles.Select(dtl => MenuTiles.Single(tl => dtl.Name.Contains(tl.Name))).ToList();
+                        var utilTiles = _spMenu.LogicalDescendants<Tile>().Except(orderedTiles).ToList();
+                        _spMenu.Children.ReplaceAll(orderedTiles);
+                        _spMenu.Children.AddRange(utilTiles);
+                        TilesOrder.ReplaceAll(orderedTiles.Select(i => i.Name).ToList()); // bezpiecznie podmień elementy żeby uniknąć zepsucia odniesień przekazanych do metod
 
-                    if (_cvMovingTile != null)
-                        _tlToMove?.LogicalAncestor<Grid>().Children.Remove(_cvMovingTile);
-                    _matcMainDraggingStartPoint = null;
-                    _cvMovingTile = null;
-                    _tlMoving = null;
+                        if (_cvMovingTile != null)
+                            _tlToMove?.LogicalAncestor<Grid>().Children.Remove(_cvMovingTile);
+                        _matcMainDraggingStartPoint = null;
+                        _cvMovingTile = null;
+                        _tlMoving = null;
 
-                    _emptyPosY = null;
-                    foreach (var tl in MenuTiles)
-                        tl.Opacity = _menuTilesOpacity;
+                        _emptyPosY = null;
+                        foreach (var tl in MenuTiles)
+                            tl.Opacity = _menuTilesOpacity;
 
-                    _tlToMove = null;
+                        _tlToMove = null;
 
-                    _menuMouseUp_Finished = true;
+                        _menuMouseUp_Finished = true;
 
 
-                    _menuMouseDown_Finished = false;
-                    _menuMouseMove_BeforeAnimationFinished = false;
-                    _menuMouseMove_Finished = false;
-                    _menuMouseUp_BeforeAnimationFinished = false;
-                    _menuMouseUp_Finished = false;
+                        _menuMouseDown_Finished = false;
+                        _menuMouseMove_BeforeAnimationFinished = false;
+                        _menuMouseMove_Finished = false;
+                        _menuMouseUp_BeforeAnimationFinished = false;
+                        _menuMouseUp_Finished = false;
+                    }
                 }
-            }
+            });
         }
 
         private async void TlResizeMainMenu_Click(object sender, RoutedEventArgs e)
@@ -418,12 +429,12 @@ namespace CommonLib.Wpf.Source.Common.Controls
                 IsFullSize = true;
                 var resizeAni = new DoubleAnimation(DefaultTileWidth + ResizeValue, new Duration(TimeSpan.FromMilliseconds(100)));
                 icon.Kind = PackIconModernKind.ArrowLeft;
-                foreach (var tl in TilesOrder.Select(o => MenuTiles.Single(tl => tl.Name == o)))
+                foreach (var tl in TilesOrder.Select(o => MenuTiles.Single(tl => Dispatcher.Invoke(() => tl.Name) == o)))
                 {
                     if (IsFullSize) // nie kolejkuj kolejnych wywołań rozciągnięcia menu, jeżeli w międzyczasie zostało wywołane zwinięcie
                     {
                         await tl.AnimateAsync(WidthProperty, resizeAni).ConfigureAwait(false);
-                        tl.Width = DefaultTileWidth + ResizeValue;
+                        Dispatcher.Invoke(() => tl.Width = DefaultTileWidth + ResizeValue);
                     }
                 }
             }
@@ -437,7 +448,7 @@ namespace CommonLib.Wpf.Source.Common.Controls
                     if (!IsFullSize)
                     {
                         await tl.AnimateAsync(WidthProperty, resizeAni).ConfigureAwait(false);
-                        tl.Width = DefaultTileWidth;
+                        Dispatcher.Invoke(() => tl.Width = DefaultTileWidth);
                     }
                 }
             }
@@ -523,11 +534,40 @@ namespace CommonLib.Wpf.Source.Common.Controls
             Select(Options.Single(o => o.TileName == MenuTiles.Single(tl => tl.Name == tileName).Name));
         }
 
+        public void SetAsMainMenu()
+        {
+            MenuTileClick += MainMenu_MenuTileClick;
+        }
+
+        private async void MainMenu_MenuTileClick(object sender, MenuTileClickedEventArgs e)
+        {
+            var tmMainMenu = (TilesMenu)sender;
+
+            if (e.TileClicked == e.PreviouslySelectedTile)
+            {
+                tmMainMenu.SelectedTile = e.PreviouslySelectedTile;
+                return;
+            }
+
+            var name = e.TileClicked.Name.AfterFirst("tl");
+            var parentGrid = ((TilesMenu)sender).LogicalAncestor<StackPanel>();
+            var mainTabs = parentGrid.LogicalDescendants<Grid>().Where(g => g.Name.EndsWith("MainTab")).ToArray();
+            var gridToShow = mainTabs.SingleOrDefault(g => g.Name.Between("grid", "MainTab") == name);
+
+            if (gridToShow != null)
+            {
+                mainTabs.Except(gridToShow).ForEach(g => g.Visibility = Visibility.Collapsed);
+                gridToShow.Visibility = Visibility.Visible;
+
+                gridToShow.RefreshDataGrids();
+            }
+            else
+                await this.LogicalAncestor<MetroWindow>().ShowMessageAsync("Error", $"There is no content for chosen menu option ({name}).");
+        }
+
         public event MenuTileClickedEventHandler MenuTileClick;
 
         protected virtual void OnMenuTileClicking(MenuTileClickedEventArgs e) => MenuTileClick?.Invoke(this, e);
-
-
     }
 
     public delegate void MenuTileClickedEventHandler(object sender, MenuTileClickedEventArgs e);

@@ -13,8 +13,11 @@ namespace CommonLib.Wpf.Source.Common.Extensions
     {
         public static IEnumerable<T> LogicalDescendants<T>(this DependencyObject depObj) where T : DependencyObject
         {
-            if (depObj == null) yield break;
-            foreach (var rawChild in LogicalTreeHelper.GetChildren(depObj))
+            if (depObj is null) yield break;
+
+            var children = Application.Current.Dispatcher.Invoke(() => LogicalTreeHelper.GetChildren(depObj).Cast<object>().ToArray());
+
+            foreach (var rawChild in children)
             {
                 if (rawChild is not DependencyObject depObjRawChild) continue;
                 if (depObjRawChild is T tChild)

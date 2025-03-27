@@ -61,27 +61,30 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
         public static Task AnimateAsync(this FrameworkElement fwElement, PropertyPath propertyPath, AnimationTimeline animation)
         {
-            return Lock (_globalSync, nameof(_globalSync), nameof(AnimateAsync), () =>
+            return Lock(_globalSync, nameof(_globalSync), nameof(AnimateAsync), async () =>
             {
-                var tcs = new TaskCompletionSource<bool>();
-                var storyBoard = new Storyboard();
-                void storyBoard_Completed(object s, EventArgs e) => tcs.TrySetResult(true);
-
-                var isSbInDict = StoryBoards.VorN(fwElement) != null;
-                if (isSbInDict)
+                await Application.Current.Dispatcher.Invoke(() =>
                 {
-                    StoryBoards[fwElement].Stop(fwElement);
-                    StoryBoards.Remove(fwElement);
-                    StoryBoards.Add(fwElement, storyBoard);
-                }
+                    var tcs = new TaskCompletionSource<bool>();
+                    var storyBoard = new Storyboard();
+                    void storyBoard_Completed(object s, EventArgs e) => tcs.TrySetResult(true);
 
-                Storyboard.SetTarget(animation, fwElement);
-                Storyboard.SetTargetProperty(animation, propertyPath);
-                storyBoard.Children.Add(animation);
-                storyBoard.Completed += storyBoard_Completed;
+                    var isSbInDict = StoryBoards.VorN(fwElement) != null;
+                    if (isSbInDict)
+                    {
+                        StoryBoards[fwElement].Stop(fwElement);
+                        StoryBoards.Remove(fwElement);
+                        StoryBoards.Add(fwElement, storyBoard);
+                    }
 
-                storyBoard.Begin(fwElement, true);
-                return tcs.Task;
+                    Storyboard.SetTarget(animation, fwElement);
+                    Storyboard.SetTargetProperty(animation, propertyPath);
+                    storyBoard.Children.Add(animation);
+                    storyBoard.Completed += storyBoard_Completed;
+                    
+                    storyBoard.Begin(fwElement, true);
+                    return tcs.Task;
+                });
             });
         }
 
@@ -97,7 +100,7 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
         public static void Animate(this FrameworkElement fwElement, PropertyPath propertyPath, AnimationTimeline animation, EventHandler callback = null)
         {
-            Lock (_globalSync, nameof(_globalSync), nameof(Animate), () =>
+            Lock(_globalSync, nameof(_globalSync), nameof(Animate), () =>
             {
                 var storyBoard = new Storyboard();
 
@@ -335,7 +338,7 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
         public static void Refresh(this FrameworkElement control)
         {
-            if (control == null)
+            if (control is null)
                 throw new ArgumentNullException(nameof(control));
 
             control.Dispatcher.Invoke(DispatcherPriority.Render, ActionUtils.EmptyDelegate);

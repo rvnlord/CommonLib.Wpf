@@ -18,7 +18,7 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             if (tag == null)
                 return thisTxtBox;
 
-            var placeholder = tag.ToString();
+            var placeholder = tag.ToString() ?? "...";
             if (text != placeholder && !string.IsNullOrWhiteSpace(text) && !force)
                 return thisTxtBox;
 

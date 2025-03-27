@@ -9,11 +9,13 @@ using System.Windows.Media;
 using CommonLib.Source.Common.Extensions;
 using CommonLib.Wpf.Source.Common.Extensions;
 using MahApps.Metro.Controls;
+using MoreLinq.Extensions;
 using Brushes = System.Windows.Media.Brushes;
 using Button = System.Windows.Controls.Button;
 using Color = System.Windows.Media.Color;
 using Label = System.Windows.Controls.Label;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
 {
@@ -48,14 +50,13 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
             gridTitleBar.MouseEnter += GridTitleBar_MouseEnter;
             gridTitleBar.MouseLeave += GridTitleBar_MouseLeave;
             gridTitleBar.MouseMove += GridTitleBar_MouseMove;
-
-
+            
             var iconHandle = notifyIcon.EnsureWin7().GetHicon();
             var icon = Icon.FromHandle(iconHandle);
             
             _notifyIcon = new NotifyIcon
             {
-                BalloonTipTitle = window.LogicalDescendants<Label>().Single(lbl => lbl.Name.EqualsInvariant("lblWindowTitle")).Content.ToString(),
+                BalloonTipTitle = window.LogicalDescendants<Label>().Single(lbl => lbl.Name.EqualsInvariant("lblWindowTitle")).Content.ToString() ?? "",
                 BalloonTipText = @"is hidden here",
                 Icon = icon
             };
@@ -91,6 +92,7 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
         {
             ((Button)sender).Background = new SolidColorBrush(Color.FromRgb(76, 76, 76));
         }
+
         public static void BtnMinimize_MouseLeave(object sender, MouseEventArgs e)
         {
             ((Button)sender).Background = Brushes.Transparent;
@@ -184,6 +186,29 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
                 window.Activate();
             else
                 window.Show();
+        }
+
+        public static void InitializeTextBoxPlaceholders(this Window window)
+        {
+            window.LogicalDescendants<TextBox>().ForEach(txt =>
+            {
+                txt.ResetValue();
+                if (!txt.IsReadOnly && txt.IsEnabled)
+                {
+                    txt.GotFocus += TxtAll_GotFocus;
+                    txt.LostFocus += TxtAll_LostFocus;
+                }
+            });
+        }
+        
+        private static void TxtAll_GotFocus(object sender, RoutedEventArgs e)
+        {
+            (sender as TextBox)?.ClearValue();
+        }
+
+        private static void TxtAll_LostFocus(object sender, RoutedEventArgs e)
+        {
+            (sender as TextBox)?.ResetValue();
         }
     }
 }
