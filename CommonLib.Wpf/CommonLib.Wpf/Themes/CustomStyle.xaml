@@ -19,6 +19,8 @@
 
     <Color x:Key="InputDisabledForegroundColor">#FF454545</Color>
     <Color x:Key="InputReadOnlyForegroundColor">#FF808080</Color>
+    <Color x:Key="ValidForegroundColor">#FF009000</Color>
+    <Color x:Key="InvalidForegroundColor">#FFFF4040</Color>
 
     <SolidColorBrush x:Key="WhiteBrush" Color="White" />
     <SolidColorBrush x:Key="MouseOverTitleBarBrush" Color="#FF000040" />
@@ -29,6 +31,8 @@
     <SolidColorBrush x:Key="InputDisabledBorderBrush" Color="#FF333333"/>
     <SolidColorBrush x:Key="InputDisabledForegroundBrush" Color="{StaticResource InputDisabledForegroundColor}"/>
     <SolidColorBrush x:Key="InputReadOnlyForegroundBrush" Color="{StaticResource InputReadOnlyForegroundColor}"/>
+    <SolidColorBrush x:Key="ValidForegroundBrush" Color="{StaticResource ValidForegroundColor}"/>
+    <SolidColorBrush x:Key="InvalidForegroundBrush" Color="{StaticResource InvalidForegroundColor}"/>
 
     <!--#endregion-->
 

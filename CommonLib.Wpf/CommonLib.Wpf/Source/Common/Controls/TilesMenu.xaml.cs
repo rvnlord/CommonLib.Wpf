@@ -554,7 +554,7 @@ namespace CommonLib.Wpf.Source.Common.Controls
             var mainTabs = parentGrid.LogicalDescendants<Grid>().Where(g => g.Name.EndsWith("MainTab")).ToArray();
             var gridToShow = mainTabs.SingleOrDefault(g => g.Name.Between("grid", "MainTab") == name);
 
-            if (gridToShow != null)
+            if (gridToShow is not null)
             {
                 mainTabs.Except(gridToShow).ForEach(g => g.Visibility = Visibility.Collapsed);
                 gridToShow.Visibility = Visibility.Visible;
