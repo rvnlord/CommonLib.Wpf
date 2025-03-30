@@ -1,57 +1,61 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using CommonLib.Source.Common.Extensions;
+using MoreLinq.Extensions;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace CommonLib.Wpf.Source.Common.Extensions
 {
     public static class TextboxExtensions
     {
-        public static TextBox ResetValue(this TextBox thisTxtBox, bool force = false)
+        public static TextBox ResetValue(this TextBox txt, bool force = false)
         {
-            if (thisTxtBox == null)
-                throw new ArgumentNullException(nameof(thisTxtBox));
+            if (txt == null)
+                throw new ArgumentNullException(nameof(txt));
 
-            var text = thisTxtBox.Text;
-            var tag = thisTxtBox.Tag;
+            var text = txt.Text;
+            var tag = txt.Tag;
             if (tag == null)
-                return thisTxtBox;
+                return txt;
 
             var placeholder = tag.ToString() ?? "...";
             if (text != placeholder && !string.IsNullOrWhiteSpace(text) && !force)
-                return thisTxtBox;
+                return txt;
 
-            var currBg = ((SolidColorBrush)thisTxtBox.Foreground).Color;
-            var newBrush = new SolidColorBrush(Color.FromArgb(128, currBg.R, currBg.G, currBg.B));
+            var bg = ((SolidColorBrush)txt.Foreground).Color;
+            var newBrush = new SolidColorBrush(Color.FromArgb(128, bg.R, bg.G, bg.B));
 
-            thisTxtBox.FontStyle = FontStyles.Italic;
-            thisTxtBox.Foreground = newBrush;
-            thisTxtBox.Text = placeholder;
-            return thisTxtBox;
+            txt.FontStyle = FontStyles.Italic;
+            txt.Foreground = newBrush;
+            txt.Text = placeholder;
+            return txt;
         }
 
-        public static TextBox ClearValue(this TextBox thisTxtBox, bool force = false)
+        public static TextBox ClearValue(this TextBox txt, bool force = false)
         {
-            if (thisTxtBox == null)
-                throw new ArgumentNullException(nameof(thisTxtBox));
+            if (txt == null)
+                throw new ArgumentNullException(nameof(txt));
 
-            var text = thisTxtBox.Text;
-            var tag = thisTxtBox.Tag;
+            var text = txt.Text;
+            var tag = txt.Tag;
             if (tag == null)
-                return thisTxtBox;
+                return txt;
 
             var placeholder = tag.ToString();
             if (text != placeholder && !force)
-                return thisTxtBox;
+                return txt;
 
-            var currBg = ((SolidColorBrush)thisTxtBox.Foreground).Color;
-            var newBrush = new SolidColorBrush(Color.FromArgb(255, currBg.R, currBg.G, currBg.B));
+            var bg = ((SolidColorBrush)txt.Foreground).Color;
+            var newBrush = new SolidColorBrush(Color.FromArgb(255, bg.R, bg.G, bg.B));
 
-            thisTxtBox.FontStyle = FontStyles.Normal;
-            thisTxtBox.Foreground = newBrush;
-            thisTxtBox.Text = string.Empty;
-            return thisTxtBox;
+            txt.FontStyle = FontStyles.Normal;
+            txt.Foreground = newBrush;
+            txt.Text = string.Empty;
+            return txt;
         }
 
         public static bool IsNullWhiteSpaceOrTag(this TextBox txtB)
@@ -69,6 +73,31 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
             txtB.Text = txtB.Text.NullifyIf(text => text == txtB.Tag.ToString());
             return txtB;
+        }
+
+        public static void InitializeTextBoxPlaceholder(this TextBox txt)
+        {
+            txt.ResetValue();
+            if (!txt.IsReadOnly && txt.IsEnabled)
+            {
+                txt.GotFocus += TxtAll_GotFocus;
+                txt.LostFocus += TxtAll_LostFocus;
+            }
+        }
+
+        public static void InitializeTextBoxPlaceholders(this IEnumerable<TextBox> txts)
+        {
+            txts.ForEach(InitializeTextBoxPlaceholder);
+        }
+
+        private static void TxtAll_GotFocus(object sender, RoutedEventArgs e)
+        {
+            (sender as TextBox)?.ClearValue();
+        }
+
+        private static void TxtAll_LostFocus(object sender, RoutedEventArgs e)
+        {
+            (sender as TextBox)?.ResetValue();
         }
     }
 }

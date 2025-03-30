@@ -10,7 +10,10 @@
                     xmlns:igPrim="http://schemas.infragistics.com/xaml/primitives"
                     xmlns:system1="clr-namespace:System;assembly=System.Runtime"
                     xmlns:igWindows="http://infragistics.com/Windows"
-                    xmlns:controls="clr-namespace:CommonLib.Wpf.Source.Common.Controls">
+                    xmlns:controls="clr-namespace:CommonLib.Wpf.Source.Common.Controls"
+                    xmlns:wpfConverters="clr-namespace:CommonLib.Wpf.Source.Common.Converters.WpfConverters">
+
+    <wpfConverters:HorizontalCenterAlignConverter x:Key="HorizontalCenterAlignConverter" />
 
     <!--#region Brushes-->
 
@@ -236,6 +239,8 @@
     <!--#region TextBox-->
 
     <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource TextBoxStyle}">
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}" />
         <Setter Property="FontSize" Value="14" />

@@ -190,25 +190,7 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
 
         public static void InitializeTextBoxPlaceholders(this Window window)
         {
-            window.LogicalDescendants<TextBox>().ForEach(txt =>
-            {
-                txt.ResetValue();
-                if (!txt.IsReadOnly && txt.IsEnabled)
-                {
-                    txt.GotFocus += TxtAll_GotFocus;
-                    txt.LostFocus += TxtAll_LostFocus;
-                }
-            });
-        }
-        
-        private static void TxtAll_GotFocus(object sender, RoutedEventArgs e)
-        {
-            (sender as TextBox)?.ClearValue();
-        }
-
-        private static void TxtAll_LostFocus(object sender, RoutedEventArgs e)
-        {
-            (sender as TextBox)?.ResetValue();
+            window.LogicalDescendants<TextBox>().InitializeTextBoxPlaceholders();
         }
     }
 }
