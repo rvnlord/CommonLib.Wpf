@@ -106,5 +106,11 @@ namespace CommonLib.Wpf.Source.Common.Extensions
         }
 
         public static MetroWindow Window(this DependencyObject child) => child.LogicalAncestor<MetroWindow>();
+
+        public static DependencyObject ClearLabels(this DependencyObject depObj)
+        {
+            depObj.LogicalDescendants<Label>().ClearValues();
+            return depObj;
+        }
     }
 }

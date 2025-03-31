@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -56,6 +57,22 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             txt.Foreground = newBrush;
             txt.Text = string.Empty;
             return txt;
+        }
+
+        public static IEnumerable<TextBox> ClearValues(this IEnumerable<TextBox> txts, bool force = false)
+        {
+            var arrTxts = txts as TextBox[] ?? txts.ToArray();
+            foreach (var txt in arrTxts)
+                txt.ClearValue(force);
+            return arrTxts;
+        }
+
+        public static IEnumerable<TextBox> ResetValues(this IEnumerable<TextBox> txts, bool force = false)
+        {
+            var arrTxts = txts as TextBox[] ?? txts.ToArray();
+            foreach (var txt in arrTxts)
+                txt.ResetValue(force);
+            return arrTxts;
         }
 
         public static bool IsNullWhiteSpaceOrTag(this TextBox txtB)

@@ -10,12 +10,15 @@ using CommonLib.Source.Common.Extensions;
 using CommonLib.Wpf.Source.Common.Extensions;
 using MahApps.Metro.Controls;
 using MoreLinq.Extensions;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 using Button = System.Windows.Controls.Button;
 using Color = System.Windows.Media.Color;
 using Label = System.Windows.Controls.Label;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using TextBox = System.Windows.Controls.TextBox;
+using Window = System.Windows.Window;
 
 namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
 {
@@ -192,5 +195,25 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
         {
             window.LogicalDescendants<TextBox>().InitializeTextBoxPlaceholders();
         }
+
+        public static void BindCopyButtons(this Window window)
+        {
+            var btnsCopy = window.LogicalDescendants<Button>().Where(b => b.Name.StartsWith("btnCopy")).ToArray();
+            btnsCopy.ForEach(btn => btn.Click += BtnCopy_Click);
+        }
+
+        private static void BtnCopy_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = (Button)sender;
+            var txt = btn.LogicalAncestor<Window>().LogicalDescendants<TextBox>().Single(txt => txt.Name.After("txt").EqualsInvariant(btn.Name.After("btnCopy")));
+            ClipboardUtils.TrySetText(txt.IsNullWhiteSpaceOrTag() ? string.Empty : txt.Text);
+        }
+
+        public static Brush GetInputDisabledBackgroundBrush(this Window window) => (Brush) window.FindResource("InputDisabledBackgroundBrush");
+        public static Brush GetValidBackgroundBrush(this Window window) => (Brush) window.FindResource("ValidBackgroundBrush");
+        public static Brush GetInvalidBackgroundBrush(this Window window) => (Brush)window.FindResource("InvalidBackgroundBrush");
+        public static Brush GetValidForegroundBrush(this Window window) => (Brush) window.FindResource("ValidForegroundBrush");
+        public static Brush GetInvalidForegroundBrush(this Window window) => (Brush) window.FindResource("InvalidForegroundBrush");
+        public static Brush GetTextBoxBackgroundBrush(this Window window) => (Brush) window.FindResource("TextBoxBackgroundBrush");
     }
 }
