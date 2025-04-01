@@ -21,7 +21,7 @@
     <Color x:Key="InputReadOnlyForegroundColor">#FF808080</Color>
     <Color x:Key="ValidForegroundColor">#FF009000</Color>
     <Color x:Key="InvalidForegroundColor">#FFFF5050</Color>
-    <Color x:Key="ValidBackgroundColor">#FF004600</Color>
+    <Color x:Key="ValidBackgroundColor">#FF003600</Color>
     <Color x:Key="InvalidBackgroundColor">#DC0000</Color>
 
     <SolidColorBrush x:Key="WhiteBrush" Color="White" />
@@ -482,6 +482,8 @@
     <Style BasedOn="{StaticResource ButtonStyle}" TargetType="{x:Type Button}">
         <Setter Property="Padding" Value="0" />
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Top" />
     </Style>
 
     <Style x:Key="MyMahButtonStyle" BasedOn="{StaticResource MahApps.Styles.Button.Square}" TargetType="{x:Type ButtonBase}">

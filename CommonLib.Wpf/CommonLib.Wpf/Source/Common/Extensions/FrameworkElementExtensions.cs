@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,6 +10,7 @@ using System.Windows.Threading;
 using CommonLib.Source.Common.Extensions.Collections;
 using CommonLib.Source.Common.Utils.TypeUtils;
 using CommonLib.Wpf.Source.Common.Utils.UtilClasses.Menu;
+using MoreLinq;
 using static CommonLib.Source.Common.Utils.LockUtils;
 using static CommonLib.Source.LibConfig;
 using static CommonLib.Wpf.Source.WpfLibConfig;
@@ -343,6 +345,33 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
             control.Dispatcher.Invoke(DispatcherPriority.Render, ActionUtils.EmptyDelegate);
             control.UpdateLayout();
+        }
+
+        
+        public static FrameworkElement Show(this FrameworkElement fe)
+        {
+            fe.Visibility = Visibility.Visible;
+            return fe;
+        }
+
+        public static IEnumerable<FrameworkElement> Show(this IEnumerable<FrameworkElement> fes)
+        {
+            var arrFes = fes as FrameworkElement[] ?? fes.ToArray();
+            arrFes.ForEach(fe => fe.Show());
+            return arrFes;
+        }
+
+        public static FrameworkElement Collapse(this FrameworkElement fe)
+        {
+            fe.Visibility = Visibility.Collapsed;
+            return fe;
+        }
+
+        public static IEnumerable<FrameworkElement> Collapse(this IEnumerable<FrameworkElement> fes)
+        {
+            var arrFes = fes as FrameworkElement[] ?? fes.ToArray();
+            arrFes.ForEach(fe => fe.Collapse());
+            return arrFes;
         }
     }
 }

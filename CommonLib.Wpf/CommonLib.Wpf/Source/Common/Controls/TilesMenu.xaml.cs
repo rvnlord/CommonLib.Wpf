@@ -536,6 +536,15 @@ namespace CommonLib.Wpf.Source.Common.Controls
 
         public void SetAsMainMenu()
         {
+            var selectedTileName = SelectedOption?.TileName;
+
+            var parentGrid = this.LogicalAncestor<StackPanel>();
+            var mainTabs = parentGrid.LogicalDescendants<Grid>().Where(g => g.Name.EndsWith("MainTab")).ToArray();
+            var visibleTab = mainTabs.Single(t => t.Name.Between("grid", "MainTab") == selectedTileName.After("tl"));
+            var collapsedTabs = mainTabs.Except(visibleTab).ToArray();
+            visibleTab.Show();
+            collapsedTabs.Collapse();
+
             MenuTileClick += MainMenu_MenuTileClick;
         }
 
