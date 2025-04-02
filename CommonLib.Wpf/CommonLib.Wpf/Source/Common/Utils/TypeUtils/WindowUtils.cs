@@ -199,16 +199,9 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
         public static void BindCopyButtons(this Window window)
         {
             var btnsCopy = window.LogicalDescendants<Button>().Where(b => b.Name.StartsWith("btnCopy")).ToArray();
-            btnsCopy.ForEach(btn => btn.Click += BtnCopy_Click);
+            btnsCopy.BindCopyButtons();
         }
-
-        private static void BtnCopy_Click(object sender, RoutedEventArgs e)
-        {
-            var btn = (Button)sender;
-            var txt = btn.LogicalAncestor<Window>().LogicalDescendants<TextBox>().Single(txt => txt.Name.After("txt").EqualsInvariant(btn.Name.After("btnCopy")));
-            ClipboardUtils.TrySetText(txt.IsNullWhiteSpaceOrTag() ? string.Empty : txt.Text);
-        }
-
+        
         public static Brush GetInputDisabledBackgroundBrush(this Window window) => (Brush) window.FindResource("InputDisabledBackgroundBrush");
         public static Brush GetValidBackgroundBrush(this Window window) => (Brush) window.FindResource("ValidBackgroundBrush");
         public static Brush GetInvalidBackgroundBrush(this Window window) => (Brush)window.FindResource("InvalidBackgroundBrush");
