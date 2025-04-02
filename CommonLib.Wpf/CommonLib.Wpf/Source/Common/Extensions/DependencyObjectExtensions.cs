@@ -11,28 +11,110 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 {
     public static class DependencyObjectExtensions
     {
-        public static IEnumerable<T> LogicalDescendants<T>(this DependencyObject depObj) where T : DependencyObject
+        public static IEnumerable<DependencyObject> LogicalChildren(this DependencyObject depObj)
         {
             if (depObj is null) yield break;
-
             var children = Application.Current.Dispatcher.Invoke(() => LogicalTreeHelper.GetChildren(depObj).Cast<object>().ToArray());
+            foreach (var rawChild in children)
+            {
+                if (rawChild is not DependencyObject depObjRawChild) continue;
+                yield return depObjRawChild;
+            }
+        }
 
+        public static IEnumerable<T> LogicalChildren<T>(this DependencyObject depObj) where T : UIElement
+        {
+            if (depObj is null) yield break;
+            var children = Application.Current.Dispatcher.Invoke(() => LogicalTreeHelper.GetChildren(depObj).Cast<object>().ToArray());
             foreach (var rawChild in children)
             {
                 if (rawChild is not DependencyObject depObjRawChild) continue;
                 if (depObjRawChild is T tChild)
                     yield return tChild;
+            }
+        }
 
-                foreach (var childOfChild in LogicalDescendants<T>(depObjRawChild))
-                    yield return childOfChild;
+        public static IEnumerable<DependencyObject> LogicalDescendants(this DependencyObject depObj)
+        {
+            if (depObj is null) yield break;
+            foreach (var child in depObj.LogicalChildren())
+            {
+                yield return child;
+                foreach (var descendant in child.LogicalDescendants())
+                    yield return descendant;
+            }
+        }
+
+        public static IEnumerable<T> LogicalDescendants<T>(this DependencyObject depObj) where T : UIElement
+        {
+            if (depObj is null) yield break;
+            foreach (var rawChild in depObj.LogicalChildren())
+            {
+                if (rawChild is not { }) continue;
+                if (rawChild is T tChild)
+                    yield return tChild;
+                foreach (var tDescendant in LogicalDescendants<T>(rawChild))
+                    yield return tDescendant;
             }
         }
 
         public static IEnumerable<Control> LogicalDescendants<T1, T2>(this DependencyObject depObj)
-            where T1 : DependencyObject
-            where T2 : DependencyObject
+            where T1 : UIElement
+            where T2 : UIElement
         {
-            return LogicalDescendants<T1>(depObj).Cast<Control>().ConcatMany(LogicalDescendants<T2>(depObj).Cast<Control>());
+            return depObj.LogicalDescendants<T1>().Cast<Control>().ConcatMany(depObj.LogicalDescendants<T2>().Cast<Control>());
+        }
+
+        public static IEnumerable<Control> LogicalDescendants<T1, T2, T3>(this DependencyObject depObj)
+            where T1 : UIElement
+            where T2 : UIElement
+            where T3 : UIElement
+        {
+            return depObj.LogicalDescendants<T1>().Cast<Control>().ConcatMany(
+                depObj.LogicalDescendants<T2>().Cast<Control>(),
+                depObj.LogicalDescendants<T3>().Cast<Control>());
+        }
+        
+        public static IEnumerable<Control> LogicalDescendants<T1, T2, T3, T4>(this DependencyObject depObj)
+            where T1 : UIElement
+            where T2 : UIElement
+            where T3 : UIElement
+            where T4 : UIElement
+        {
+            return depObj.LogicalDescendants<T1>().Cast<Control>().ConcatMany(
+                depObj.LogicalDescendants<T2>().Cast<Control>(),
+                depObj.LogicalDescendants<T3>().Cast<Control>(),
+                depObj.LogicalDescendants<T4>().Cast<Control>());
+        }
+
+        public static IEnumerable<Control> LogicalDescendants<T1, T2, T3, T4, T5>(this DependencyObject depObj)
+            where T1 : UIElement
+            where T2 : UIElement
+            where T3 : UIElement
+            where T4 : UIElement
+            where T5 : UIElement
+        {
+            return depObj.LogicalDescendants<T1>().Cast<Control>().ConcatMany(
+                depObj.LogicalDescendants<T2>().Cast<Control>(),
+                depObj.LogicalDescendants<T3>().Cast<Control>(),
+                depObj.LogicalDescendants<T4>().Cast<Control>(),
+                depObj.LogicalDescendants<T5>().Cast<Control>());
+        }
+
+        public static IEnumerable<Control> LogicalDescendants<T1, T2, T3, T4, T5, T6>(this DependencyObject depObj)
+            where T1 : UIElement
+            where T2 : UIElement
+            where T3 : UIElement
+            where T4 : UIElement
+            where T5 : UIElement
+            where T6 : UIElement
+        {
+            return depObj.LogicalDescendants<T1>().Cast<Control>().ConcatMany(
+                depObj.LogicalDescendants<T2>().Cast<Control>(),
+                depObj.LogicalDescendants<T3>().Cast<Control>(),
+                depObj.LogicalDescendants<T4>().Cast<Control>(),
+                depObj.LogicalDescendants<T5>().Cast<Control>(),
+                depObj.LogicalDescendants<T6>().Cast<Control>());
         }
         
         public static ScrollViewer GetScrollViewer(this DependencyObject o)

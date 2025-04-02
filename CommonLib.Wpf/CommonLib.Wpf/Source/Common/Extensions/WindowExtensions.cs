@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using CommonLib.Wpf.Source.Common.Utils;
 using CommonLib.Wpf.Source.Common.Utils.UtilClasses;
@@ -62,6 +63,11 @@ namespace CommonLib.Wpf.Source.Common.Extensions
         public static void SetLoaderStatus(this Window wnd, string status)
         {
             WpfAsyncUtils.SetLoaderStatus(wnd, status);
+        }
+
+        public static async Task SetLoaderStatusAsync(this Window wnd, string status)
+        {
+            await Task.Run(() => WpfAsyncUtils.SetLoaderStatus(wnd, status));
         }
     }
 }

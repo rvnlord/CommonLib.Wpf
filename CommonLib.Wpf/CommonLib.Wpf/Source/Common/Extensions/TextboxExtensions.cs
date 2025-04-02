@@ -8,6 +8,7 @@ using CommonLib.Source.Common.Extensions;
 using MoreLinq.Extensions;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using TextBox = System.Windows.Controls.TextBox;
+using Window = System.Windows.Window;
 
 namespace CommonLib.Wpf.Source.Common.Extensions
 {
@@ -15,47 +16,55 @@ namespace CommonLib.Wpf.Source.Common.Extensions
     {
         public static TextBox ResetValue(this TextBox txt, bool force = false)
         {
-            if (txt == null)
+            if (txt is null)
                 throw new ArgumentNullException(nameof(txt));
 
-            var text = txt.Text;
-            var tag = txt.Tag;
-            if (tag == null)
+            var text = Application.Current.Dispatcher.Invoke(() => txt.Text);
+            var tag = Application.Current.Dispatcher.Invoke(() => txt.Tag);
+            if (tag is null)
                 return txt;
 
             var placeholder = tag.ToString() ?? "...";
             if (text != placeholder && !string.IsNullOrWhiteSpace(text) && !force)
                 return txt;
 
-            var bg = ((SolidColorBrush)txt.Foreground).Color;
+            var bg = Application.Current.Dispatcher.Invoke(() => ((SolidColorBrush)txt.Foreground).Color);
             var newBrush = new SolidColorBrush(Color.FromArgb(128, bg.R, bg.G, bg.B));
 
-            txt.FontStyle = FontStyles.Italic;
-            txt.Foreground = newBrush;
-            txt.Text = placeholder;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                txt.FontStyle = FontStyles.Italic;
+                txt.Foreground = newBrush;
+                txt.Text = placeholder;
+            });
+
             return txt;
         }
 
         public static TextBox ClearValue(this TextBox txt, bool force = false)
         {
-            if (txt == null)
+            if (txt is null)
                 throw new ArgumentNullException(nameof(txt));
 
-            var text = txt.Text;
-            var tag = txt.Tag;
-            if (tag == null)
+            var text = Application.Current.Dispatcher.Invoke(() => txt.Text);
+            var tag = Application.Current.Dispatcher.Invoke(() => txt.Tag);
+            if (tag is null)
                 return txt;
 
             var placeholder = tag.ToString();
             if (text != placeholder && !force)
                 return txt;
 
-            var bg = ((SolidColorBrush)txt.Foreground).Color;
+            var bg = Application.Current.Dispatcher.Invoke(() => ((SolidColorBrush)txt.Foreground).Color);
             var newBrush = new SolidColorBrush(Color.FromArgb(255, bg.R, bg.G, bg.B));
 
-            txt.FontStyle = FontStyles.Normal;
-            txt.Foreground = newBrush;
-            txt.Text = string.Empty;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                txt.FontStyle = FontStyles.Normal;
+                txt.Foreground = newBrush;
+                txt.Text = string.Empty;
+            });
+
             return txt;
         }
 
@@ -77,10 +86,10 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
         public static bool IsNullWhiteSpaceOrTag(this TextBox txtB)
         {
-            if (txtB == null)
+            if (txtB is null)
                 throw new ArgumentNullException(nameof(txtB));
 
-            return txtB.Text.IsNullWhiteSpaceOrDefault(txtB.Tag?.ToString() ?? "");
+            return Application.Current.Dispatcher.Invoke(() => txtB.Text.IsNullWhiteSpaceOrDefault(txtB.Tag?.ToString() ?? ""));
         }
 
         public static TextBox NullifyIfTag(this TextBox txtB)

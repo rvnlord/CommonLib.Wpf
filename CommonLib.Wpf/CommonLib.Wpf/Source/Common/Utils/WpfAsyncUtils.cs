@@ -11,6 +11,7 @@ using CommonLib.Source.Common.Utils.TypeUtils;
 using CommonLib.Wpf.Source.Common.Extensions;
 using CommonLib.Wpf.Source.Common.Extensions.Collections;
 using Infragistics.Controls.Interactions;
+using Infragistics.Windows.Editors;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 using MoreLinq;
@@ -19,27 +20,127 @@ namespace CommonLib.Wpf.Source.Common.Utils
 {
     public static class WpfAsyncUtils
     {
-        public static async Task<Exception> AsyncWithLoader(Panel loaderContainer, IReadOnlyCollection<object> objectsToDisable, Action action)
+        public static async Task<Exception> AsyncWithLoader(Panel loaderContainer, IEnumerable<object> objectsToDisable, Action action, LoaderType loaderType = LoaderType.InfragisticsLoader)
         {
             return await Task.Run(async () =>
             {
+                var arrObjectsToDisable = objectsToDisable as object[] ?? objectsToDisable?.ToArray();
                 var wnd = loaderContainer.LogicalAncestor<MetroWindow>();
                 var dispatcher = wnd.Dispatcher;
-                if (dispatcher == null)
+                if (dispatcher is null)
                     throw new NullReferenceException(nameof(dispatcher));
-                var actuallyDisabledControls = objectsToDisable;
                 Exception exception = null;
 
+                Control focusedControl = null;
                 dispatcher.Invoke(() =>
                 {
-                    if (objectsToDisable != null && objectsToDisable.Any())
-                        objectsToDisable.DisableControls();
-                    loaderContainer.ShowLoader();
+                    if (arrObjectsToDisable is not null && arrObjectsToDisable.Any())
+                    {
+                        focusedControl = arrObjectsToDisable.Cast<Control>().SingleOrDefault(c => c.IsFocused);
+                        arrObjectsToDisable.DisableControls();
+                    }
+                    loaderContainer.ShowLoader(loaderType);
                 });
 
                 try
                 {
-                    action();
+                    await Task.Run(action);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                    await wnd.ShowMessageAsync("Error occured", ex.Message).ConfigureAwait(false);
+                }
+                finally
+                {
+                    dispatcher.Invoke(() =>
+                    {
+                        loaderContainer.HideLoader();
+                        var gridMain = wnd.LogicalDescendants<Grid>().Single(g => g.Name == "gridMain");
+                        if (!gridMain.HasLoader() && arrObjectsToDisable is not null && arrObjectsToDisable.Any())
+                        {
+                            arrObjectsToDisable.EnableControls();
+                            focusedControl?.Focus();
+                        }
+                    });
+                }
+                return exception;
+            });
+        }
+
+        public static async Task<Exception> AsyncWithLoader(Panel loaderContainer, IEnumerable<object> objectsToDisable, Func<Task> asyncAction, LoaderType loaderType = LoaderType.InfragisticsLoader)
+        {
+            var arrObjectsToDisable = objectsToDisable as object[] ?? objectsToDisable?.ToArray();
+            var wnd = loaderContainer.LogicalAncestor<MetroWindow>();
+            var dispatcher = wnd.Dispatcher;
+    
+            if (dispatcher is null)
+                throw new NullReferenceException(nameof(dispatcher));
+    
+            Exception exception = null;
+            Control focusedControl = null;
+            await dispatcher.InvokeAsync(() =>
+            {
+                if (arrObjectsToDisable is not null && arrObjectsToDisable.Any())
+                {
+                    focusedControl = arrObjectsToDisable.Cast<Control>().SingleOrDefault(c => c.IsFocused);
+                    arrObjectsToDisable.DisableControls();
+                }
+                loaderContainer.ShowLoader(loaderType);
+            });
+
+            try
+            {
+                await Task.Run(asyncAction);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                await wnd.ShowMessageAsync("Error occurred", ex.Message).ConfigureAwait(false);
+            }
+            finally
+            {
+                await dispatcher.InvokeAsync(() =>
+                {
+                    loaderContainer.HideLoader();
+                    var gridMain = wnd.LogicalDescendants<Grid>().Single(g => g.Name == "gridMain");
+                    if (!gridMain.HasLoader() && arrObjectsToDisable is not null && arrObjectsToDisable.Any())
+                    {
+                        arrObjectsToDisable.EnableControls();
+                        focusedControl?.Focus();
+                    }
+                });
+            }
+
+            return exception;
+        }
+
+        public static async Task<Exception> AsyncWithLoader(Panel loaderContainer, IEnumerable<object> objectsToDisable, Func<List<object>> action, LoaderType loaderType = LoaderType.InfragisticsLoader)
+        {
+            return await Task.Run(async () =>
+            {
+                var listObjectsToDisable = objectsToDisable as List<object> ?? objectsToDisable?.ToList();
+                var wnd = loaderContainer.LogicalAncestor<MetroWindow>();
+                var dispatcher = wnd.Dispatcher;
+                if (dispatcher is null)
+                    throw new NullReferenceException(nameof(dispatcher));
+
+                var actuallyDisabledControls = listObjectsToDisable;
+                Exception exception = null;
+                Control focusedControl = null;
+                dispatcher.Invoke(() =>
+                {
+                    if (listObjectsToDisable is not null && listObjectsToDisable.Any())
+                    {
+                        focusedControl = listObjectsToDisable.Cast<Control>().SingleOrDefault(c => c.IsFocused);
+                        listObjectsToDisable.DisableControls();
+                    }
+                    loaderContainer.ShowLoader(loaderType);
+                });
+
+                try
+                {
+                    actuallyDisabledControls = await Task.Run(action);
                 }
                 catch (Exception ex)
                 {
@@ -48,60 +149,22 @@ namespace CommonLib.Wpf.Source.Common.Utils
                 }
                 finally
                 {
-                    dispatcher.Invoke(() =>
+                    await dispatcher.Invoke(async () =>
                     {
                         loaderContainer.HideLoader();
                         var gridMain = wnd.LogicalDescendants<Grid>().Single(g => g.Name == "gridMain");
                         if (gridMain.HasLoader()) return;
 
                         if (actuallyDisabledControls != null && actuallyDisabledControls.Any())
+                        {
                             actuallyDisabledControls.EnableControls();
+                            focusedControl?.Focus();
+                        }
+                        await Task.CompletedTask;
                     });
                 }
-
                 return exception;
             }).ConfigureAwait(false);
-        }
-
-        public static Task AsyncWithLoader(Panel loaderContainer, IReadOnlyCollection<object> objectsToDisable, Func<List<object>> action)
-        {
-            var task = Task.Run(async () =>
-            {
-                var wnd = loaderContainer.LogicalAncestor<MetroWindow>();
-                var dispatcher = wnd.Dispatcher;
-                if (dispatcher == null)
-                    throw new NullReferenceException(nameof(dispatcher));
-
-                var actuallyDisabledControls = objectsToDisable;
-                dispatcher.Invoke(() =>
-                {
-                    if (objectsToDisable != null && objectsToDisable.Any())
-                        objectsToDisable.DisableControls();
-                    loaderContainer.ShowLoader();
-                });
-
-                try
-                {
-                    actuallyDisabledControls = action();
-                }
-                catch (Exception ex)
-                {
-                    await dispatcher.Invoke(async () => await wnd.ShowMessageAsync("Error occured", ex.Message).ConfigureAwait(false)).ConfigureAwait(false);
-                }
-                finally
-                {
-                    dispatcher.Invoke(() =>
-                    {
-                        loaderContainer.HideLoader();
-                        var gridMain = wnd.LogicalDescendants<Grid>().Single(g => g.Name == "gridMain");
-                        if (gridMain.HasLoader()) return;
-
-                        if (actuallyDisabledControls != null && actuallyDisabledControls.Any())
-                            actuallyDisabledControls.EnableControls();
-                    });
-                }
-            });
-            return task;
         }
 
         public static void ShowLoader(Panel control, LoaderType loaderType = LoaderType.InfragisticsLoader)
@@ -118,7 +181,7 @@ namespace CommonLib.Wpf.Source.Common.Utils
 
             var loader = loaderType switch
             {
-                LoaderType.InfragisticsLoader => (FrameworkElement) new XamBusyIndicator
+                LoaderType.InfragisticsLoader => (FrameworkElement)new XamBusyIndicator
                 {
                     Name = "prLoader",
                 },
@@ -148,13 +211,12 @@ namespace CommonLib.Wpf.Source.Common.Utils
 
             var zIndex = MoreEnumerable.Append(control.LogicalDescendants<FrameworkElement>(), control).MaxBy_(Panel.GetZIndex).First().ZIndex();
             Panel.SetZIndex(rect, zIndex + 1);
-            //if (loader != null)
             Panel.SetZIndex(loader, zIndex + 1);
             Panel.SetZIndex(status, zIndex + 1);
 
             control.Children.AddRange(new[] { rect, loader, status });
         }
-
+        
         public static void HideLoader(Panel control)
         {
             var loaders = control.LogicalDescendants<FrameworkElement>().Where(c => c.Name == "prLoader").ToArray();
