@@ -57,7 +57,7 @@ namespace CommonLib.Wpf.Source.Common.Utils
             }
         }
 
-        public static List<Delegate> RemoveEventHandlers(object o, string EventName)
+        public static List<Delegate> RemoveEventHandlers(object o, string eventName)
         {
             var delegates = new List<Delegate>();
             if (o == null) return delegates;
@@ -68,7 +68,7 @@ namespace CommonLib.Wpf.Source.Common.Utils
 
             foreach (var fi in eventFields)
             {
-                if (EventName.IsNullOrWhiteSpace() || !EventName.Remove("Event").In(fi.Name.Remove("Event")) && fi.FieldType.FullName?.ContainsAny($".{EventName}Args,", $".{EventName}EventArgs,") != true)
+                if (eventName.IsNullOrWhiteSpace() || !eventName.Remove("Event").In(fi.Name.Remove("Event")) && fi.FieldType.FullName?.ContainsAny($".{eventName}Args,", $".{eventName}EventArgs,") != true)
                     continue;
 
                 if (fi.FieldType == typeof(RoutedEvent))

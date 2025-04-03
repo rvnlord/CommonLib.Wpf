@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using CommonLib.Source.Common.Extensions;
+using CommonLib.Wpf.Source.Common.Utils;
 using MoreLinq.Extensions;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using TextBox = System.Windows.Controls.TextBox;
@@ -33,9 +34,13 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
             Application.Current.Dispatcher.Invoke(() =>
             {
+                var textChangedHandlers = txt.RemoveEventHandlers("TextChanged");
+
                 txt.FontStyle = FontStyles.Italic;
                 txt.Foreground = newBrush;
                 txt.Text = placeholder;
+
+                txt.AddEventHandlers("TextChanged", textChangedHandlers);
             });
 
             return txt;
@@ -60,9 +65,13 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
             Application.Current.Dispatcher.Invoke(() =>
             {
+                var textChangedHandlers = txt.RemoveEventHandlers("TextChanged");
+
                 txt.FontStyle = FontStyles.Normal;
                 txt.Foreground = newBrush;
                 txt.Text = string.Empty;
+
+                txt.AddEventHandlers("TextChanged", textChangedHandlers);
             });
 
             return txt;
