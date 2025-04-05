@@ -11,6 +11,7 @@ using CommonLib.Wpf.Source.Common.Extensions;
 using MahApps.Metro.Controls;
 using MoreLinq.Extensions;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static CommonLib.Wpf.Source.Common.Utils.WpfAsyncUtils;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 using Button = System.Windows.Controls.Button;
@@ -202,11 +203,12 @@ namespace CommonLib.Wpf.Source.Common.Utils.TypeUtils
             btnsCopy.BindCopyButtons();
         }
         
-        public static Brush GetInputDisabledBackgroundBrush(this Window window) => window.Dispatcher.Invoke(() => (Brush)window.FindResource("InputDisabledBackgroundBrush"));
-        public static Brush GetValidBackgroundBrush(this Window window) => window.Dispatcher.Invoke(() => (Brush)window.FindResource("ValidBackgroundBrush"));
-        public static Brush GetInvalidBackgroundBrush(this Window window) => window.Dispatcher.Invoke(() => (Brush)window.FindResource("InvalidBackgroundBrush"));
-        public static Brush GetValidForegroundBrush(this Window window) => window.Dispatcher.Invoke(() => (Brush)window.FindResource("ValidForegroundBrush"));
-        public static Brush GetInvalidForegroundBrush(this Window window) => window.Dispatcher.Invoke(() => (Brush)window.FindResource("InvalidForegroundBrush"));
-        public static Brush GetTextBoxBackgroundBrush(this Window window) => window.Dispatcher.Invoke(() => (Brush)window.FindResource("TextBoxBackgroundBrush"));
+        public static Brush GetInputDisabledBackgroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("InputDisabledBackgroundBrush"));
+        public static Brush GetValidBackgroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("ValidBackgroundBrush"));
+        public static Brush GetInvalidBackgroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("InvalidBackgroundBrush"));
+        public static Brush GetValidForegroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("ValidForegroundBrush"));
+        public static Brush GetInvalidForegroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("InvalidForegroundBrush"));
+        public static Brush GetDefaultTextBoxBackgroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("TextBoxBackgroundBrush"));
+        public static Brush GetDefaultLabelForegroundBrush(this Window window) => DispatchIfNeeded(() => (Brush)window.FindResource("TextBoxBackgroundBrush"));
     }
 }

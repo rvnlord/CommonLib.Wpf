@@ -5,9 +5,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using CommonLib.Source.Common.Extensions;
-using CommonLib.Wpf.Source.Common.Utils;
+using CommonLib.Wpf.Source.Common.Utils.TypeUtils;
 using MoreLinq.Extensions;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static CommonLib.Wpf.Source.Common.Utils.WpfAsyncUtils;
 using TextBox = System.Windows.Controls.TextBox;
 using Window = System.Windows.Window;
 
@@ -20,8 +21,9 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             if (txt is null)
                 throw new ArgumentNullException(nameof(txt));
 
-            var text = Application.Current.Dispatcher.Invoke(() => txt.Text);
-            var tag = Application.Current.Dispatcher.Invoke(() => txt.Tag);
+            var disp = txt.LogicalAncestor<Window>().Dispatcher;
+            var text = DispatchIfNeeded(() => txt.Text);
+            var tag = DispatchIfNeeded(() => txt.Tag);
             if (tag is null)
                 return txt;
 
@@ -29,10 +31,10 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             if (text != placeholder && !string.IsNullOrWhiteSpace(text) && !force)
                 return txt;
 
-            var bg = Application.Current.Dispatcher.Invoke(() => ((SolidColorBrush)txt.Foreground).Color);
+            var bg = DispatchIfNeeded(() => ((SolidColorBrush)txt.Foreground).Color);
             var newBrush = new SolidColorBrush(Color.FromArgb(128, bg.R, bg.G, bg.B));
 
-            Application.Current.Dispatcher.Invoke(() =>
+            DispatchIfNeeded(() =>
             {
                 var textChangedHandlers = txt.RemoveEventHandlers("TextChanged");
 
@@ -51,8 +53,9 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             if (txt is null)
                 throw new ArgumentNullException(nameof(txt));
 
-            var text = Application.Current.Dispatcher.Invoke(() => txt.Text);
-            var tag = Application.Current.Dispatcher.Invoke(() => txt.Tag);
+            var disp = txt.LogicalAncestor<Window>().Dispatcher;
+            var text = DispatchIfNeeded(() => txt.Text);
+            var tag = DispatchIfNeeded(() => txt.Tag);
             if (tag is null)
                 return txt;
 
@@ -60,10 +63,10 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             if (text != placeholder && !force)
                 return txt;
 
-            var bg = Application.Current.Dispatcher.Invoke(() => ((SolidColorBrush)txt.Foreground).Color);
+            var bg = DispatchIfNeeded(() => ((SolidColorBrush)txt.Foreground).Color);
             var newBrush = new SolidColorBrush(Color.FromArgb(255, bg.R, bg.G, bg.B));
 
-            Application.Current.Dispatcher.Invoke(() =>
+            DispatchIfNeeded(() =>
             {
                 var textChangedHandlers = txt.RemoveEventHandlers("TextChanged");
 
@@ -93,12 +96,12 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             return arrTxts;
         }
 
-        public static bool IsNullWhiteSpaceOrTag(this TextBox txtB)
+        public static bool IsNullWhiteSpaceOrTag(this TextBox txt)
         {
-            if (txtB is null)
-                throw new ArgumentNullException(nameof(txtB));
-
-            return Application.Current.Dispatcher.Invoke(() => txtB.Text.IsNullWhiteSpaceOrDefault(txtB.Tag?.ToString() ?? ""));
+            if (txt is null)
+                throw new ArgumentNullException(nameof(txt));
+            
+            return DispatchIfNeeded(() => txt.Text.IsNullWhiteSpaceOrDefault(txt.Tag?.ToString() ?? ""));
         }
 
         public static TextBox NullifyIfTag(this TextBox txtB)
@@ -134,5 +137,47 @@ namespace CommonLib.Wpf.Source.Common.Extensions
         {
             (sender as TextBox)?.ResetValue();
         }
+
+        public static TextBox SetBackground(this TextBox txt, ControlState background)
+        {
+            var wnd = txt.LogicalAncestor<Window>();
+            if (txt.IsReadOnly) // || !txt.IsEnabled) // for now ignoring disabled as disabled state is temporary, i.e.: when the loader is visible. I don't really validatee disabled controls either and if they are in disabled state, re-enabling them would cause the background setting (set in this method) to work anyway.
+            {
+                var readOnlyBorder = (Border)txt.Template.FindName("ReadOnlyVisualElement", txt);
+                readOnlyBorder.Background = background switch
+                {
+                    ControlState.Default => wnd.GetInputDisabledBackgroundBrush(),
+                    ControlState.Valid => wnd.GetValidBackgroundBrush(),
+                    ControlState.Invalid => wnd.GetInvalidBackgroundBrush(),
+                    _ => throw new ArgumentOutOfRangeException(nameof(background), background, null)
+                };
+            }
+            else
+            {
+                txt.Background = background switch
+                {
+                    ControlState.Default => wnd.GetDefaultTextBoxBackgroundBrush(),
+                    ControlState.Valid => wnd.GetValidBackgroundBrush(),
+                    ControlState.Invalid => wnd.GetInvalidBackgroundBrush(),
+                    _ => throw new ArgumentOutOfRangeException(nameof(background), background, null)
+                };
+            }
+            return txt;
+        }
+
+        public static TextBox SetDefaultBackground(this TextBox txt) => txt.SetBackground(ControlState.Default);
+        public static TextBox SetValidBackground(this TextBox txt) => txt.SetBackground(ControlState.Valid);
+        public static TextBox SetInvalidBackground(this TextBox txt) => txt.SetBackground(ControlState.Invalid);
+
+        public static IEnumerable<TextBox> SetBackground(this IEnumerable<TextBox> txts, ControlState background)
+        {
+            var arrTxts = txts as TextBox[] ?? txts.ToArray();
+            arrTxts.ForEach(txt => txt.SetBackground(background));
+            return arrTxts;
+        }
+
+        public static IEnumerable<TextBox> SetDefaultBackground(this IEnumerable<TextBox> txt) => txt.SetBackground(ControlState.Default);
+        public static IEnumerable<TextBox> SetValidBackground(this IEnumerable<TextBox> txt) => txt.SetBackground(ControlState.Valid);
+        public static IEnumerable<TextBox> SetInvalidBackground(this IEnumerable<TextBox> txt) => txt.SetBackground(ControlState.Invalid);
     }
 }

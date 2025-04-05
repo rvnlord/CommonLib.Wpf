@@ -258,6 +258,37 @@ namespace CommonLib.Wpf.Source.Common.Utils
                 tbLoaderStatus.Text = status;
             });
         }
+
+        public static void DispatchIfNeeded(Action callback)
+        {
+            if (!Application.Current.Dispatcher.CheckAccess())
+                Application.Current.Dispatcher.Invoke(callback);
+            else
+                callback();
+        }
+
+        public static TResult DispatchIfNeeded<TResult>(Func<TResult> callback)
+        {
+            if (!Application.Current.Dispatcher.CheckAccess())
+                return Application.Current.Dispatcher.Invoke(callback);
+            else
+                return callback();
+        }
+
+        public static async Task DispatchIfNeededAsync(Action callback)
+        {
+            if (!Application.Current.Dispatcher.CheckAccess())
+                await Application.Current.Dispatcher.InvokeAsync(callback);
+            else
+                await Task.Run(callback);
+        }
+
+        public static async Task<TResult> DispatchIfNeededAsync<TResult>(Func<TResult> callback)
+        {
+            if (!Application.Current.Dispatcher.CheckAccess())
+                return await Application.Current.Dispatcher.InvokeAsync(callback);
+            return await Task.Run(callback);
+        }
     }
 
     public class LoaderSpinnerWrapper

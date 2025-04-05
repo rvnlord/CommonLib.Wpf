@@ -191,8 +191,15 @@ namespace CommonLib.Wpf.Source.Common.Extensions
 
         public static DependencyObject ClearLabels(this DependencyObject depObj)
         {
-            depObj.LogicalDescendants<Label>().ClearValues();
+            depObj.LogicalDescendants<Label>().ClearText();
             return depObj;
         }
+    }
+
+    public enum ControlState
+    {
+        Default,
+        Valid,
+        Invalid
     }
 }
