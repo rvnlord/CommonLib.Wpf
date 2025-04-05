@@ -64,7 +64,7 @@ namespace CommonLib.Wpf.Source.Common.Utils
 
             var t = o.GetType();
             var eventFields = GetTypeEventFields(t);
-            EventHandlerList static_event_handlers = null;
+            EventHandlerList staticEventHandlers = null;
 
             foreach (var fi in eventFields)
             {
@@ -91,10 +91,9 @@ namespace CommonLib.Wpf.Source.Common.Utils
                 }
                 else if (fi.IsStatic)
                 {
-                    if (static_event_handlers == null)
-                        static_event_handlers = GetStaticEventHandlerList(t, o);
+                    staticEventHandlers ??= GetStaticEventHandlerList(t, o);
                     var idx = fi.GetValue(o);
-                    var eh = static_event_handlers[idx];
+                    var eh = staticEventHandlers[idx];
                     var dels = eh?.GetInvocationList();
                     if (dels == null) continue;
                     var ei = t.GetEvent(fi.Name, AllBindings);

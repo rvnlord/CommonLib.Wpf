@@ -234,27 +234,24 @@ namespace CommonLib.Wpf.Source.Common.Utils
 
         public static LoaderSpinnerWrapper GetLoader(Window wnd)
         {
-            if (wnd == null)
+            if (wnd is null)
                 throw new ArgumentNullException(nameof(wnd));
-
-            return wnd.Dispatcher?.Invoke(() =>
+            
+            return new LoaderSpinnerWrapper
             {
-                return new LoaderSpinnerWrapper
-                {
-                    LoaderControl = wnd.LogicalDescendants<FrameworkElement>().First(c => c.Name == "prLoader"),
-                    LoaderStatus = wnd.LogicalDescendants<TextBlock>().First(c => c.Name == "prLoaderStatus")
-                };
-            });
+                LoaderControl = wnd.LogicalDescendants<FrameworkElement>().First(c => c.Name == "prLoader"),
+                LoaderStatus = wnd.LogicalDescendants<TextBlock>().First(c => c.Name == "prLoaderStatus")
+            };
         }
 
         public static void SetLoaderStatus(Window wnd, string status)
         {
-            if (wnd == null)
+            if (wnd is null)
                 throw new ArgumentNullException(nameof(wnd));
 
-            var tbLoaderStatus = wnd.GetLoader().LoaderStatus;
-            wnd.Dispatcher?.Invoke(() =>
+            DispatchIfNeeded(() =>
             {
+                var tbLoaderStatus = wnd.GetLoader().LoaderStatus;
                 tbLoaderStatus.Text = status;
             });
         }
