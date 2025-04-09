@@ -80,6 +80,18 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             return txt;
         }
 
+        public static TextBox SetValue(this TextBox txt, string value)
+        {
+            if (value.IsNullOrWhiteSpace())
+                return txt.IsFocused ? txt.ClearValue(true) : txt.ResetValue(true);
+
+            txt.ClearValue(true).Text = value;
+            txt.CaretIndex = value?.Length ?? 0;
+            return txt;
+        }
+
+        public static TextBox SetText(this TextBox txt, string value) => txt.SetValue(value);
+
         public static IEnumerable<TextBox> ClearValues(this IEnumerable<TextBox> txts, bool force = false)
         {
             var arrTxts = txts as TextBox[] ?? txts.ToArray();
