@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Forms;
 using CommonLib.Source.Common.Extensions.Collections;
 using CommonLib.Wpf.Source.Common.Utils;
+using Control = System.Windows.Controls.Control;
 
 namespace CommonLib.Wpf.Source.Common.Extensions
 {
@@ -11,6 +14,11 @@ namespace CommonLib.Wpf.Source.Common.Extensions
         public static void AddEventHandlers(this object o, string eventName, List<Delegate> ehs)
         {
             WpfEventUtils.AddEventHandlers(o, eventName, ehs);
+        }
+
+        public static void AddEventHandlers(this object o, List<Delegate> ehs)
+        {
+            WpfEventUtils.AddEventHandlers(o, ehs);
         }
 
         public static List<Delegate> RemoveEventHandlers(this object o, string eventName)
@@ -25,7 +33,8 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             foreach (var control in listControls)
             {
                 var eventHandlers = control.RemoveEventHandlers(eventName);
-                dictHandlers.Add(control, eventHandlers);
+                if (eventHandlers.Any())
+                    dictHandlers.Add(control, eventHandlers);
             }
 
             return dictHandlers;
@@ -36,6 +45,12 @@ namespace CommonLib.Wpf.Source.Common.Extensions
             var listControls = controls as List<T> ?? controls.ToList<T>();
             foreach (var control in listControls.Where(control => ehs.VorN(control) is not null))
                 control.AddEventHandlers(eventName, ehs[control]);
+        }
+
+        public static void AddEventHandlers(this Dictionary<Control, List<Delegate>> ehs)
+        {
+            foreach (var (control, eventHandlers) in ehs)
+                control.AddEventHandlers(eventHandlers);
         }
     }
 }

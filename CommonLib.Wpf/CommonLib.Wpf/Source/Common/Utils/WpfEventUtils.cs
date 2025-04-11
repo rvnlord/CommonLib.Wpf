@@ -15,12 +15,24 @@ namespace CommonLib.Wpf.Source.Common.Utils
 
         public static void AddEventHandlers(object o, string eventName, List<Delegate> eventHandlers)
         {
-            if (o == null)
+            if (o is null)
                 throw new ArgumentNullException(nameof(o));
-            if (eventHandlers == null)
+            if (eventHandlers is null)
                 throw new ArgumentNullException(nameof(eventHandlers));
 
             var ei = o.GetType().GetEvents().Single(e => e.Name == eventName);
+            foreach (var eventHandler in eventHandlers)
+                ei.AddEventHandler(o, eventHandler);
+        }
+
+        public static void AddEventHandlers(object o, List<Delegate> eventHandlers)
+        {
+            if (o is null)
+                throw new ArgumentNullException(nameof(o));
+            if (eventHandlers is null)
+                throw new ArgumentNullException(nameof(eventHandlers));
+            
+            var ei = o.GetType().GetEvents().Single(e => e.Name == eventHandlers[0].Method.Name.AfterFirst("_"));
             foreach (var eventHandler in eventHandlers)
                 ei.AddEventHandler(o, eventHandler);
         }
